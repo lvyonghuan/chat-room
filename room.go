@@ -19,14 +19,15 @@ var Upgrade = websocket.Upgrader{
 	},
 }
 
-func NewHub(c Client) *Room {
-	room := &Room{
+func NewHub(c Client) *User {
+	room := &User{
 		Broadcast:  c.Send,
 		Clients:    sync.Map{},
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Username:   c.Username,
 		RoomID:     1,
+		Bucket:     10,
 	}
 	room.Clients.Store(c, true)
 	return room
@@ -51,7 +52,7 @@ func Start(ctx *gin.Context) {
 	hub := NewHub(c)
 	c.Room = hub
 	data.AddRoom(hub.RoomID, hub)
-	//log.Printf("用户%s加入了房间%d", c.Username, c.Room.RoomID)
+	//log.Printf("用户%s加入了房间%d", c.Username, c.User.RoomID)
 	go hub.run()
 	lock.Unlock()
 	hub.Register <- &c
@@ -60,7 +61,13 @@ func Start(ctx *gin.Context) {
 	go Write(&c)
 }
 
-func (h *Room) run() {
+func (h *User) run() {
+	go func() {
+		for {
+			time.Sleep(60 * time.Second)
+			h.Bucket = 10 //每隔60秒，桶中可用的发言机会重置
+		}
+	}()
 	for {
 		select {
 		case client := <-h.Register:
@@ -76,14 +83,14 @@ func (h *Room) run() {
 				continue
 			}
 			h.Clients.Range(func(key, value interface{}) bool {
-				log.Println("message:", message)
+				//log.Println("message:", message)
 				client, ok := key.(Client)
 				if !ok {
 					log.Println("Failed to convert key to *Client:", key)
 				}
 				//select {
-				log.Println("client:", client)
-				log.Println("send:", client.Send)
+				//log.Println("client:", client)
+				//log.Println("send:", client.Send)
 				client.Send <- message
 				//default:
 				//close(client.Send)

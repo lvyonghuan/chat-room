@@ -2,27 +2,27 @@ package main
 
 var data = &Data{}
 
-func (d *Data) AddRoom(roomID int, room *Room) {
-	roomDataInterface, _ := d.roomMap.LoadOrStore(roomID, &Building{Rooms: []*Room{}})
-	roomData := roomDataInterface.(*Building)
+func (d *Data) AddRoom(roomID int, room *User) {
+	roomDataInterface, _ := d.roomMap.LoadOrStore(roomID, &Room{Users: []*User{}})
+	roomData := roomDataInterface.(*Room)
 	d.usernameMap.Store(room.Username, room)
-	roomData.Rooms = append(roomData.Rooms, room)
+	roomData.Users = append(roomData.Users, room)
 }
 
-func (d *Data) GetBuilding(building int) []*Room {
+func (d *Data) GetBuilding(building int) []*User {
 	buildingDataInterface, ok := d.roomMap.Load(building)
 	if ok {
-		buildingData := buildingDataInterface.(*Building)
-		return buildingData.Rooms
+		buildingData := buildingDataInterface.(*Room)
+		return buildingData.Users
 	}
 	return nil
 }
 
-func (d *Data) GetRoom(roomID int) *Room {
-	var room *Room
+func (d *Data) GetRoom(roomID int) *User {
+	var room *User
 	d.roomMap.Range(func(key, value interface{}) bool {
-		buildingData := value.(*Building)
-		for _, r := range buildingData.Rooms {
+		buildingData := value.(*Room)
+		for _, r := range buildingData.Users {
 			if r.RoomID == roomID {
 				room = r
 				return false
@@ -36,14 +36,14 @@ func (d *Data) GetRoom(roomID int) *Room {
 func (d *Data) DeleteRoom(username string) {
 	roomInterface, ok := d.usernameMap.Load(username)
 	if ok {
-		room := roomInterface.(*Room)
+		room := roomInterface.(*User)
 		d.usernameMap.Delete(username)
 		buildingDataInterface, ok := d.roomMap.Load(room.RoomID)
 		if ok {
-			buildingData := buildingDataInterface.(*Building)
-			for i, r := range buildingData.Rooms {
+			buildingData := buildingDataInterface.(*Room)
+			for i, r := range buildingData.Users {
 				if r == room {
-					buildingData.Rooms = append(buildingData.Rooms[:i], buildingData.Rooms[i+1:]...)
+					buildingData.Users = append(buildingData.Users[:i], buildingData.Users[i+1:]...)
 					break
 				}
 			}
@@ -111,15 +111,15 @@ func (d *Data) DeleteRoom(username string) {
 //}
 //
 //// SearchRoomByID 根据房间id索引房间
-//func SearchRoomByID(c *gin.Context, roomID int) (room []Room, err error) {
+//func SearchRoomByID(c *gin.Context, roomID int) (room []User, err error) {
 //	serializedRoomSlice, err := rds.SMembers(c, strconv.Itoa(roomID)).Result()
 //	log.Println(serializedRoomSlice)
 //	if err != nil && err != redis.Nil {
 //		return nil, err
 //	}
-//	var rooms []Room
+//	var rooms []User
 //	for _, serializedRoom := range serializedRoomSlice {
-//		var room *Room
+//		var room *User
 //		*room, err = deSerializedRoom([]byte(serializedRoom))
 //		log.Println(*room)
 //		if err != nil {

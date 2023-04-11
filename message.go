@@ -91,6 +91,11 @@ func Write(c *Client) {
 			log.Println("read msg failed, err:", err)
 			break
 		}
+		//发言频次检测
+		if c.Room.Bucket == 0 {
+			c.Room.Broadcast <- []byte("时间段内发言次数已达到上限")
+			continue
+		}
 		// 这里只处理一个消息类型
 		switch msgType {
 		case websocket.TextMessage:
@@ -99,6 +104,7 @@ func Write(c *Client) {
 			if err != nil {
 				log.Println(err)
 			}
+			c.Room.Bucket--
 			for i := range RoomList {
 				RoomList[i].Broadcast <- msg
 			}

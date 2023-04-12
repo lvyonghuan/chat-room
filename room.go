@@ -59,13 +59,17 @@ func Start(ctx *gin.Context) {
 	// 开俩协程读写消息
 	go Read(&c)
 	go Write(&c)
+	//go pingPong(c.Conn)
 }
 
 func (h *User) run() {
+	var bucketLock sync.Mutex
 	go func() {
 		for {
-			time.Sleep(60 * time.Second)
+			time.Sleep(1 * time.Second)
+			bucketLock.Lock()
 			h.Bucket = 10 //每隔60秒，桶中可用的发言机会重置
+			bucketLock.Unlock()
 		}
 	}()
 	for {
@@ -86,7 +90,7 @@ func (h *User) run() {
 				//log.Println("message:", message)
 				client, ok := key.(Client)
 				if !ok {
-					log.Println("Failed to convert key to *Client:", key)
+					log.Println("Failed to convert key to Client:", key)
 				}
 				//select {
 				//log.Println("client:", client)

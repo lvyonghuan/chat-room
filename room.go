@@ -52,21 +52,20 @@ func Start(ctx *gin.Context) {
 	hub := NewHub(c)
 	c.Room = hub
 	data.AddRoom(hub.RoomID, hub)
-	//log.Printf("用户%s加入了房间%d", c.Username, c.User.RoomID)
 	go hub.run()
 	lock.Unlock()
 	hub.Register <- &c
 	// 开俩协程读写消息
 	go Read(&c)
 	go Write(&c)
-	//go pingPong(c.Conn)
+	go pingPong(c.Conn)
 }
 
 func (h *User) run() {
 	var bucketLock sync.Mutex
 	go func() {
 		for {
-			time.Sleep(1 * time.Second)
+			time.Sleep(60 * time.Second)
 			bucketLock.Lock()
 			h.Bucket = 10 //每隔60秒，桶中可用的发言机会重置
 			bucketLock.Unlock()
@@ -87,19 +86,11 @@ func (h *User) run() {
 				continue
 			}
 			h.Clients.Range(func(key, value interface{}) bool {
-				//log.Println("message:", message)
 				client, ok := key.(Client)
 				if !ok {
 					log.Println("Failed to convert key to Client:", key)
 				}
-				//select {
-				//log.Println("client:", client)
-				//log.Println("send:", client.Send)
 				client.Send <- message
-				//default:
-				//close(client.Send)
-				//h.Clients.Delete(client)
-				//}
 				return true
 			})
 		}

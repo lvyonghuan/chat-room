@@ -6,10 +6,10 @@ import (
 
 func InitRouters() {
 	r := gin.Default()
-	r.GET("/chatroom", ChatRoom)
+	r.GET("/chatroom/:username/:roomID", NewChatRoom)
 	r.Run()
 }
 
-func ChatRoom(c *gin.Context) {
-	Start(c)
+func NewChatRoom(c *gin.Context) {
+	IntoRoom(c)
 }
